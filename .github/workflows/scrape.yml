@@ -1,0 +1,36 @@
+name: Scrape Typepad Blog
+
+on:
+  workflow_dispatch:  # Lets you trigger manually via a button in GitHub
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Scrape blog with wget
+      run: |
+        wget \
+          --mirror \
+          --convert-links \
+          --adjust-extension \
+          --page-requisites \
+          --no-parent \
+          --restrict-file-names=windows \
+          --domains=singularity2050.com \
+          --span-hosts \
+          --directory-prefix=scraped_site/ \
+          https://singularity2050.com/
+        # For atom subdomain, change the URL to https://atom.singularity2050.com/
+        # Add --wait=1 --random-wait to be polite if needed
+
+    - name: Commit scraped files
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Action"
+        git add scraped_site/*
+        timestamp=$(date -u)
+        git commit -m "Scraped blog archive: ${timestamp}" || exit 0
+        git push
